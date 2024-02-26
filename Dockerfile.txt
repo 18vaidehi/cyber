@@ -1,0 +1,38 @@
+FROM ubuntu:20.04
+
+# Install necessary packages
+RUN apt-get update && apt-get install -y \
+        apache2 \
+        php \
+        libapache2-mod-php \
+        php-mysql \
+        mysql-server \
+        git \
+        curl \
+        wget \
+        unzip \
+        && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Download bWAPP
+RUN wget https://sourceforge.net/projects/bwapp/files/Latest/bwapp_lite_v2.3.3.zip && \
+    unzip bwapp_lite_v2.3.3.zip -d /var/www/html/bwapp && \
+    rm bwapp_lite_v2.3.3.zip
+
+# Configure Apache
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf && \
+    echo "DocumentRoot /var/www/html/bwapp" >> /etc/apache2/sites-available/000-default.conf && \
+    echo "ErrorLog ${APACHE_LOG_DIR}/error.log" >> /etc/apache2/sites-available/000-default.conf && \
+    echo "CustomLog ${APACHE_LOG_DIR}/access.log combined" >> /etc/apache2/sites-available/000-default.conf
+
+# Start Apache and MySQL
+CMD ["systemctl", "start", "apache2", "mysql"]
+
+# Change ownership of bWAPP directory
+USER root
+RUN chown -R www-data:www-data /var/www/html/bwapp
+
+# Set permissions for bWAPP directory
+RUN chmod -R 755 /var/www/html/bwapp
+
+# Expose port 80
+EXPOSE 80
